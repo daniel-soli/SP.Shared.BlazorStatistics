@@ -1,0 +1,282 @@
+﻿@page "/"
+@inject IRequisitionService requisitionService
+@using System.Globalization
+
+@if (reqFull == null || bestSender == null)
+{
+    <p><MatProgressBar Indeterminate="true"></MatProgressBar></p>
+}
+else
+{
+<div class="row">
+    <div class="col-lg-4">
+        <style>
+            .demo-mat-card {
+                max-width: 400px;
+            }
+
+            .demo-mat-card-content {
+                padding: 1rem;
+            }
+
+            .demo-mat-card-clean-margin {
+                margin: 0px;
+            }
+        </style>
+        <MatCard class="demo-mat-card">
+            <MatCardContent>
+                <div class="demo-mat-card-content">
+                    <MatHeadline6 class="demo-mat-card-clean-margin">
+                        Rekvisisjoner idag
+                    </MatHeadline6>
+                    <MatSubtitle2 class="demo-mat-card-clean-margin">
+                        <label style="color: #28a745; position: absolute; font-size: 3rem; right: 2rem; top: 1rem">114</label>
+                    </MatSubtitle2>
+                </div>
+
+                <MatBody2 class="demo-mat-card-content demo-mat-card-clean-margin">
+                    @reqToday.Count
+                </MatBody2>
+            </MatCardContent>
+        </MatCard>
+    </div>
+    <div class="col-md-3 col-sm-6 col-xs-12">
+        <div class="info-box">
+            <span class="info-box-icon bg-green"><i class="fas fa-envelope"></i></span>
+
+            <div class="info-box-content">
+                <span class="info-box-text">Messages</span>
+                <span class="info-box-number">1,410</span>
+            </div>
+            <!-- /.info-box-content -->
+        </div>
+        <!-- /.info-box -->
+    </div>
+    <div class="col-lg-3 col-xs-6">
+        <!-- small box -->
+        <div class="small-box bg-green">
+            <div class="inner">
+                <h3>@reqToday.Count</h3>
+
+                <p>Rekvisisjoner idag</p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-envelope"></i>
+            </div>
+
+        </div>
+    </div>
+    <div class="col-lg-3 col-xs-6">
+        <!-- small box -->
+        <div class="small-box bg-yellow">
+            <div class="inner">
+                <h3>
+                    @bestSender.Antall
+                </h3>
+
+                <p>
+                    Topprekvirent<br />
+                    HER-Id: @bestSender.SenderHerId<br />
+                    @bestSender.SenderName
+                </p>
+            </div>
+            <div class="icon">
+                <i class="fas fa-user-md"></i>
+            </div>
+
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <MatCard class="demo-mat-card">
+            <MatCardContent>
+                <div class="demo-mat-card-content">
+                    <MatHeadline6 class="demo-mat-card-clean-margin">
+                        Rekvisisjoner uke @thisWeek.WeekNumber (sist aktivitet)
+                    </MatHeadline6>
+                    <MatSubtitle2 class="demo-mat-card-clean-margin">
+
+                    </MatSubtitle2>
+                </div>
+
+                <MatBody2 class="demo-mat-card-content demo-mat-card-clean-margin">
+                    @thisWeek.Antall
+                </MatBody2>
+            </MatCardContent>
+        </MatCard>
+    </div>
+    <div class="col-lg-4">
+        <MatCard class="demo-mat-card">
+            <MatCardContent>
+                <div class="demo-mat-card-content">
+                    <MatHeadline6 class="demo-mat-card-clean-margin">
+                        Topp Rekvirent
+                    </MatHeadline6>
+                    <MatSubtitle2 class="demo-mat-card-clean-margin">
+
+                    </MatSubtitle2>
+                </div>
+
+                <MatBody2 class="demo-mat-card-content demo-mat-card-clean-margin">
+                    HER-Id: @bestSender.SenderHerId<br />
+                    @bestSender.SenderName <br />
+                    Antall rekvisasjoner: @bestSender.Antall
+
+                </MatBody2>
+            </MatCardContent>
+        </MatCard>
+    </div>
+    
+</div>
+<div class="row">
+    <div class="col-lg-8">
+        <RadzenChart ColorScheme="ColorScheme.Monochrome">
+            <RadzenPieSeries Data="@topSender" Title="Antall" CategoryProperty="SenderName" ValueProperty="Antall" />
+        </RadzenChart>
+    </div>
+</div>
+}
+
+
+@code {
+
+    List<Requisition> requisitionsToday;
+    List<Requisition> reqThisWeek;
+    List<DataItem> reqCount = new List<DataItem>();
+    List<RequisiotionFull> reqFull;
+    List<TopSender> topSender;
+
+    TopSender bestSender;
+    DataItem reqToday;
+    ThisWeek thisWeek;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //reqFull = await requisitionService.ListAllWithInfo();
+        await GetReqFull();
+        //requisitionsToday = await requisitionService.GetByDate(DateTime.Now.ToString("yyyy-MM-dd"));
+        await ReqsToday();
+        //bestSender = await requisitionService.GetTopSender();
+        await GetTopSender();
+
+        thisWeek = await GetReqWeek();
+
+        reqToday = GetReqsToday(requisitionsToday);
+
+        var reqByDate = reqFull.GroupBy(s => s.RequisitionCreatedTime).Select(g => new { Date = g.Key, Count = g.Select(l => l.Id).Distinct().Count() });
+
+        foreach (var req in reqByDate)
+        {
+            var date = $"{ req.Date.Month }/{ req.Date.Day }";
+
+            reqCount.Add(new DataItem
+            {
+                Label = $"{ req.Date.Month }/{ req.Date.Day }",
+                Count = req.Count
+            });
+        }
+
+        reqCount.ToArray();
+    }
+
+    private async Task GetTopSender()
+    {
+        //await Task.Delay(1);   // give the Renderer a chance to catch up
+        topSender = await requisitionService.GetTopSender();
+        bestSender = topSender.FirstOrDefault();
+    }
+
+    private async Task ReqsToday()
+    {
+        //await Task.Delay(1);   // give the Renderer a chance to catch up
+        requisitionsToday = await requisitionService.GetByDate(DateTime.Now.ToString("yyyy-MM-dd"));
+    }
+
+    private async Task GetReqFull()
+    {
+        await Task.Delay(1);   // give the Renderer a chance to catch up
+        reqFull = await requisitionService.ListAllWithInfo();
+
+    }
+
+    private async Task<ThisWeek> GetReqWeek()
+    {
+        reqThisWeek = await requisitionService.ListAll();
+        var reqWeek = reqThisWeek.GroupBy(i => CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(i.RequisitionCreatedTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday)).Select(g => new { Label = g.Key, Count = g.Select(l => l.Id).Distinct().Count() }).OrderByDescending(s => s.Count).FirstOrDefault();
+
+        ThisWeek thisWeek = new ThisWeek();
+        if (reqWeek.Count != 0)
+        {
+            thisWeek.Antall = reqWeek.Count;
+            thisWeek.WeekNumber = reqWeek.Label;
+        }
+        else
+        {
+            thisWeek.Antall = 0;
+            thisWeek.WeekNumber = 0;
+        }
+        return thisWeek;
+    }
+
+    //protected override async Task OnAfterRenderAsync(bool firstRender)
+    //{
+    //    if (firstRender)
+    //    {
+    //        await Task.Run(() => requisitionService.GetTopSender());//<--or Task.Delay(0) without Task.Run
+    //        StateHasChanged();
+    //    }
+
+    //}
+
+    //private BestSender GetBestSender(List<RequisiotionFull> requisitions)
+    //{
+    //    var superReq = requisitions.GroupBy(s => s.SenderHerId).Select(g => new BestSender{ HerId = g.Key, Count = g.Count(), SenderName = g.FirstOrDefault().SenderName }).OrderByDescending(s => s.Count).Take(1);
+
+    //    BestSender bSender = new BestSender
+    //    {
+    //        HerId = superReq.FirstOrDefault().HerId,
+    //        Count = superReq.FirstOrDefault().Count,
+    //        SenderName = superReq.FirstOrDefault().SenderName
+    //    };
+
+    //    return bSender;
+    //}
+
+    private DataItem GetReqsToday(List<Requisition> requisitions)
+    {
+        var todayReq = requisitions.GroupBy(g => g.RequisitionCreatedTime.Date).Select(s => new { Date = s.Key, Count = s.Count() });
+
+        DataItem today = new DataItem();
+        if (todayReq.Count() != 0)
+        {
+            today.Count = todayReq.FirstOrDefault().Count;
+            today.Label = todayReq.FirstOrDefault().Date.ToString();
+        }
+        else
+        {
+            today.Count = 0;
+            today.Label = DateTime.Now.ToString("yyyy-MM-dd");
+        }
+
+        return today;
+    }
+
+    //private async Task<List<ReqSender>> ()
+    //{
+
+    //}
+
+    public class DataItem
+    {
+        public string Label { get; set; }
+        public int Count { get; set; }
+    }
+
+    public class BestSender
+    {
+        public int HerId { get; set; }
+        public string SenderName { get; set; }
+        public int Count { get; set; }
+    }
+
+
+}

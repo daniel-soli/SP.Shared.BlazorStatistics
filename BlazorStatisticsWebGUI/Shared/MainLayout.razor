@@ -1,0 +1,45 @@
+﻿@inherits LayoutComponentBase
+<MatDrawerContainer Style="width: 100vw; height: 100vh;">
+    <MatDrawer @bind-Opened="@Opened" Mode="@MatDrawerMode.Modal">
+        <header class="drawer-header">
+            <div class="drawer-logo">
+                <img alt="Sykehuspartner" style="width: 80%; height:auto;" class="logo-img" src="images/logo.svg" title="Sykehuspartner">
+            </div>
+        </header>
+        <NavMenu />
+    </MatDrawer>
+    <MatDrawerContent>
+        <MatAppBarContainer>
+            <MatAppBar Fixed="true">
+                <MatAppBarRow>
+                    <MatAppBarSection>
+                        <MatIconButton Icon="menu" OnClick="@((e) => ButtonClicked())" Class="menu-drawer-button"></MatIconButton>
+                        <MatAppBarTitle>Rekvisisjonsstatistikk for Covid-19</MatAppBarTitle>
+                    </MatAppBarSection>
+                    <MatAppBarSection Align="@MatAppBarSectionAlign.End">
+                        <MatIconButton Icon="favorite"></MatIconButton>
+                    </MatAppBarSection>
+                </MatAppBarRow>
+            </MatAppBar>
+            <MatAppBarContent>
+                <section class="container-fluid">
+                    @Body
+                </section>
+                <footer class="page-footer-main">
+                    <div class="flex-1">
+                        © 2020 <a href="//sykehuspartner.no">SykehusPartner</a> Versjon 0.5 - Utviklet av Integrasjonsutvikling
+                    </div>
+                </footer>
+            </MatAppBarContent>
+        </MatAppBarContainer>
+    </MatDrawerContent>
+</MatDrawerContainer>
+
+@code {
+    bool Opened = true;
+
+    void ButtonClicked()
+    {
+        Opened = !Opened;
+    }
+}

@@ -1,0 +1,119 @@
+﻿@page "/requisitionlist2"
+@inject IRequisitionService requisitionService
+
+<link href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+
+<style>
+    .sort-th {
+        cursor: pointer;
+    }
+
+    .fa {
+        float: right;
+    }
+
+    .btn-custom {
+        color: black;
+        float: left;
+        padding: 8px 16px;
+        text-decoration: none;
+        transition: background-color .3s;
+        border: 2px solid #000;
+        margin: 0px 5px 0px 5px;
+    }
+</style>
+
+@if (publishers == null)
+{
+    <p><em> Loading...</em></p>
+}
+else
+{
+    <RadzenCard>
+        <MatTable Items="@sortedData" 
+                  LoadInitialData="true"
+                  class="mat-elevation-z5" 
+                  RequestApiOnlyOnce="true"
+                  AllowSelection="true"
+                  RowClass="tester"
+                  UseSortHeaderRow="true" 
+                  FilterByColumnName="RequisitionCreatedTime"
+                  DebounceMilliseconds="150"
+                  >
+            <MatTableHeader>
+                <MatSortHeaderRow SortChanged="@SortData">
+                    <MatSortHeader SortId="Id"><span>Id</span></MatSortHeader>
+                    <MatSortHeader SortId="LabHerId"><span>Lab HER ID</span></MatSortHeader>
+                    <MatSortHeader SortId="LabName"><span>Lab Navn</span></MatSortHeader>
+                    <MatSortHeader SortId="SenderHerId"><span>Sender HER Id</span></MatSortHeader>
+                    <MatSortHeader SortId="SenderName"><span>Sender Navn</span></MatSortHeader>
+                    <MatSortHeader SortId="RequisitionCreatedTime"><span>Opprettet</span></MatSortHeader>
+                </MatSortHeaderRow>
+            </MatTableHeader>
+            <MatTableRow>
+                <td width="5%">@context.Id</td>
+                <td width="5%">@context.LabHerId</td>
+                <td width="40%">@context.LabName</td>
+                <td width="5%">@context.SenderHerId</td>
+                <td width="40%">@context.SenderName</td>
+                <td width="5%">@context.RequisitionCreatedTime</td>
+            </MatTableRow>
+        </MatTable>
+    </RadzenCard>
+}
+@code {
+    List<RequisiotionFull> publishers;
+
+    void SortData(MatSortChangedEvent sort)
+    {
+        sortedData = publishers.ToArray();
+        if (!(sort == null || sort.Direction == MatSortDirection.None || string.IsNullOrEmpty(sort.SortId)))
+        {
+            Comparison<RequisiotionFull> comparison = null;
+            switch (sort.SortId)
+            {
+                
+                case "Id":
+                    comparison = (s1, s2) => s1.Id.CompareTo(s2.Id);
+                    break;
+                case "LabHerId":
+                    comparison = (s1, s2) => s1.LabHerId.CompareTo(s2.LabHerId);
+                    break;
+                case "LabName":
+                    comparison = (s1, s2) => string.Compare(s1.LabName, s2.LabName, StringComparison.InvariantCultureIgnoreCase);
+                    break;
+                case "SenderHerId":
+                    comparison = (s1, s2) => s1.SenderHerId.CompareTo(s2.SenderHerId);
+                    break;
+                case "SenderName":
+                    comparison = (s1, s2) => string.Compare(s1.SenderName, s2.SenderName, StringComparison.InvariantCultureIgnoreCase);
+                    break;
+                case "RequisitionCreatedTime":
+                    comparison = (s1, s2) => s1.RequisitionCreatedTime.CompareTo(s2.RequisitionCreatedTime);
+                    break;
+            }
+            if (comparison != null)
+            {
+                if (sort.Direction == MatSortDirection.Desc)
+                {
+                    Array.Sort(sortedData, (s1, s2) => -1 * comparison(s1, s2));
+                }
+                else
+                {
+                    Array.Sort(sortedData, comparison);
+                }
+
+            }
+        }
+    }
+
+    RequisiotionFull[] sortedData = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        //display total page buttons
+        publishers = await requisitionService.ListAllWithInfo();
+        SortData(null);
+    }
+
+}

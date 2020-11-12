@@ -16,5 +16,6 @@ namespace BlazorStatistics.Core.Interfaces
         Task<List<Requisition>> ListAll();
         Task<List<RequisiotionFull>> ListAllWithInfo();
         Task<List<TopSender>> GetTopSender();
+        Task<List<TopReceiver>> GetTopReceivers();
     }
 }

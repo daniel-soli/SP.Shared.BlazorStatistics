@@ -3,12 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30523.141
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorStatisticsWebGUI", "BlazorStatisticsWebGUI\BlazorStatisticsWebGUI.csproj", "{4688D7A3-EC09-4114-9202-2B7290BF57A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorStatisticsWebGUI", "BlazorStatisticsWebGUI\BlazorStatisticsWebGUI.csproj", "{4688D7A3-EC09-4114-9202-2B7290BF57A7}"
 	ProjectSection(ProjectDependencies) = postProject
 		{F113E232-C43D-4B42-B1C2-1317F7E456CE} = {F113E232-C43D-4B42-B1C2-1317F7E456CE}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorStatistics.Core", "BlazorStatistics.Core\BlazorStatistics.Core.csproj", "{F113E232-C43D-4B42-B1C2-1317F7E456CE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlazorStatistics.Core", "BlazorStatistics.Core\BlazorStatistics.Core.csproj", "{F113E232-C43D-4B42-B1C2-1317F7E456CE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

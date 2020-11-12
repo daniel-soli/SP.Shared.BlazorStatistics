@@ -1,4 +1,4 @@
-﻿@page "/"
+﻿@page "/dashboard"
 @inject IRequisitionService requisitionService
 @using System.Globalization
 
@@ -8,6 +8,43 @@
 }
 else
 {
+    <h1>Helse Sør-Øst</h1>
+    <p>Dashboard som viser statistikk for Helse Sør-Øst under ett</p>
+    <div class="row">
+        <div class="col-xl-3 col col-lg-6 py-2">
+            <RadzenCard>
+                <h2>Siste 7 dager <label style="color: #28a745; position: absolute; font-size: 3rem; right: 2rem; top: 1rem">28000</label></h2>
+                <RadzenChart @ref="reqChart" style="width: 100%; height: 200px">
+                    <RadzenColumnSeries Stroke="#bbdefb" Fill="#455a64" Data="@reqsLastWeek" CategoryProperty="Label" Title="Rekvisisjoner" LineType="LineType.Dashed" ValueProperty="Count" />
+                    <RadzenColumnOptions Radius="2" />
+                    <RadzenLegend Visible="false" />
+                </RadzenChart>
+            </RadzenCard>
+        </div>
+        <div class="col-xl-3 col-lg-6 py-2">
+            <RadzenCard>
+                <h2>Siste 24 timer <label></label></h2>
+            </RadzenCard>
+        </div>
+        <div class="col-xl-3 col-lg-6 py-2">
+            <RadzenCard>
+                <h2>Topp rekv. sendere</h2>
+                <RadzenChart ColorScheme="ColorScheme.Monochrome">
+                    <RadzenPieSeries Data="@topSender" Title="Antall" CategoryProperty="SenderName" ValueProperty="Antall" />
+                    <RadzenLegend Visible="false" />
+                </RadzenChart>
+            </RadzenCard>
+        </div>
+        <div class="col-xl-3 col-lg-6 py-2">
+            <RadzenCard>
+                <h2>Topp rekv. sendere</h2>
+                <RadzenChart ColorScheme="ColorScheme.Monochrome">
+                    <RadzenPieSeries Data="@topReceivers" Title="Antall" CategoryProperty="LabName" ValueProperty="Antall" />
+                    <RadzenLegend Visible="false" />
+                </RadzenChart>
+            </RadzenCard>
+        </div>
+    </div>
 <div class="row">
     <div class="col-lg-4">
         <style>
@@ -130,20 +167,28 @@ else
 <div class="row">
     <div class="col-lg-8">
         <RadzenChart ColorScheme="ColorScheme.Monochrome">
-            <RadzenPieSeries Data="@topSender" Title="Antall" CategoryProperty="SenderName" ValueProperty="Antall" />
+            <RadzenPieSeries Data="@topSender" Title="Antall" CategoryProperty="SenderShortName" ValueProperty="Antall" />
         </RadzenChart>
+    </div>
+</div>
+<div class="row">
+    <div class="col-lg-4">
+        <MatCard class="demo-mat-card">
+            
+        </MatCard> 
     </div>
 </div>
 }
 
-
 @code {
-
+    RadzenChart reqChart;
     List<Requisition> requisitionsToday;
     List<Requisition> reqThisWeek;
     List<DataItem> reqCount = new List<DataItem>();
     List<RequisiotionFull> reqFull;
     List<TopSender> topSender;
+    List<DataItem> reqsLastWeek = new List<DataItem>();
+    List<TopReceiver> topReceivers;
 
     TopSender bestSender;
     DataItem reqToday;
@@ -157,7 +202,8 @@ else
         await ReqsToday();
         //bestSender = await requisitionService.GetTopSender();
         await GetTopSender();
-
+        await GetReqCountsWeek();
+        await GetTopReceivers();
         thisWeek = await GetReqWeek();
 
         reqToday = GetReqsToday(requisitionsToday);
@@ -182,7 +228,21 @@ else
     {
         //await Task.Delay(1);   // give the Renderer a chance to catch up
         topSender = await requisitionService.GetTopSender();
+        foreach(var sender in topSender)
+        {
+            sender.SenderShortName = sender.SenderName.Substring(0,25).ToLower();
+        }
         bestSender = topSender.FirstOrDefault();
+    }
+
+    private async Task GetTopReceivers()
+    {
+        //await Task.Delay(1);   // give the Renderer a chance to catch up
+        topReceivers = await requisitionService.GetTopReceivers();
+        foreach (var receiver in topReceivers)
+        {
+            receiver.LabShortName = receiver.LabName.Substring(0, 25).ToLower();
+        }
     }
 
     private async Task ReqsToday()
@@ -198,10 +258,30 @@ else
 
     }
 
+    private  async Task GetReqCountsWeek()
+    {
+        await Task.Delay(1);
+        reqThisWeek = await requisitionService.ListAll();
+        var reqWeek = reqThisWeek.Where(w => w.RequisitionCreatedTime >= DateTime.Now.Date.AddDays(-7)).GroupBy(s => s.RequisitionCreatedTime).Select(g => new { Label = g.Key, Count = g.Select(l => l.Id).Distinct().Count() }).OrderBy(s => s.Label);
+
+        //reqsLastWeek
+        foreach (var req in reqWeek)
+        {
+            //var date = $"{ req.Date.Month }/{ req.Date.Day }";
+
+            reqsLastWeek.Add(new DataItem
+            {
+                Label = $"{ req.Label.Month }/{ req.Label.Day }",
+                Count = req.Count
+            });
+        }
+        reqsLastWeek.ToArray();
+    }
+
     private async Task<ThisWeek> GetReqWeek()
     {
         reqThisWeek = await requisitionService.ListAll();
-        var reqWeek = reqThisWeek.GroupBy(i => CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(i.RequisitionCreatedTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday)).Select(g => new { Label = g.Key, Count = g.Select(l => l.Id).Distinct().Count() }).OrderByDescending(s => s.Count).FirstOrDefault();
+        var reqWeek = reqThisWeek.GroupBy(i => CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(i.RequisitionCreatedTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday)).Select(g => new { Label = g.Key, Count = g.Select(l => l.Id).Distinct().Count() }).OrderByDescending(s => s.Label).FirstOrDefault();
 
         ThisWeek thisWeek = new ThisWeek();
         if (reqWeek.Count != 0)
@@ -216,30 +296,6 @@ else
         }
         return thisWeek;
     }
-
-    //protected override async Task OnAfterRenderAsync(bool firstRender)
-    //{
-    //    if (firstRender)
-    //    {
-    //        await Task.Run(() => requisitionService.GetTopSender());//<--or Task.Delay(0) without Task.Run
-    //        StateHasChanged();
-    //    }
-
-    //}
-
-    //private BestSender GetBestSender(List<RequisiotionFull> requisitions)
-    //{
-    //    var superReq = requisitions.GroupBy(s => s.SenderHerId).Select(g => new BestSender{ HerId = g.Key, Count = g.Count(), SenderName = g.FirstOrDefault().SenderName }).OrderByDescending(s => s.Count).Take(1);
-
-    //    BestSender bSender = new BestSender
-    //    {
-    //        HerId = superReq.FirstOrDefault().HerId,
-    //        Count = superReq.FirstOrDefault().Count,
-    //        SenderName = superReq.FirstOrDefault().SenderName
-    //    };
-
-    //    return bSender;
-    //}
 
     private DataItem GetReqsToday(List<Requisition> requisitions)
     {
@@ -260,10 +316,7 @@ else
         return today;
     }
 
-    //private async Task<List<ReqSender>> ()
-    //{
-
-    //}
+    // INTERNAL CLASSES
 
     public class DataItem
     {

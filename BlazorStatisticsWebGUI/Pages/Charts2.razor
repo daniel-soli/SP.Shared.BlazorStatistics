@@ -1,0 +1,88 @@
+﻿@page "/Charts2"
+
+<div class="row">
+    <div class="col-lg-8 col-sm-12">
+        <RadzenCard>
+            <h2>Statistikk</h2>
+            @if (reqDChartItems == null && reqChartItems == null)
+            {
+                <MatProgressCircle Indeterminate="true" FourColored="true" />
+            }
+            else
+            {
+                if (dateType == 0)
+                {
+                    <RadzenChart>
+                        <RadzenColumnSeries Stroke="#bbdefb" Fill="#455a64" Data="@reqDChartItems" CategoryProperty="Label" Title="Rekvisisjoner" ValueProperty="Count" />
+                        <RadzenColumnOptions Radius="2" />
+                        <RadzenCategoryAxis FormatString="{0:dd MMM}" Padding="50" />
+                        <RadzenColumnOptions Margin="10" />
+                        <RadzenLegend Visible="false" />
+                    </RadzenChart>
+                }
+                else
+                {
+                    <RadzenChart>
+                        <RadzenColumnSeries Stroke="#bbdefb" Fill="#455a64" Data="@reqChartItems" CategoryProperty="Label" Title="Rekvisisjoner" ValueProperty="Count" />
+                        <RadzenColumnOptions Radius="2" />
+                        <RadzenCategoryAxis Padding="50" />
+                        <RadzenColumnOptions Margin="10" />
+                        <RadzenLegend Visible="false" />
+                    </RadzenChart>
+                }
+            }
+        </RadzenCard>
+    </div>
+    <div class="col-lg-4 col-sm-12">
+        <div class="row">
+            <div class="col-lg-12 col-sm-12">
+                <RadzenCard>
+                    <h2>Sortering</h2>
+                    <MatSelect Label="Velg Periode" @bind-Value="@PeriodId">
+                        @foreach (var item in selectOptions)
+                        {
+                            <MatOption Value="@item.Id">@item.Name</MatOption>
+                        }
+                    </MatSelect>
+                </RadzenCard>
+            </div>
+            <div class="col-lg-12 col-sm-12">
+                <RadzenCard>
+                    <h2>Filtrering</h2>
+                    <MatAccordion>
+                        <MatExpansionPanel Expanded="true">
+                            <MatExpansionPanelSummary>
+                                <MatExpansionPanelHeader>Helseforetak</MatExpansionPanelHeader>
+                            </MatExpansionPanelSummary>
+                            <MatExpansionPanelDetails>
+
+                                @if (servProviders != null)
+                                {
+                                    <RadzenCheckBoxList @bind-Value="checkBoxValues" Orientation="Orientation.Vertical" TValue="int" Change="@((args) => Change(args, "HF Checkbox changed"))">
+                                        <Items>
+                                            @foreach(var serv in servProviders){
+                                            <RadzenCheckBoxListItem Text="@serv.Name" Value="@serv.Id" />
+                                            }
+                                        </Items>
+                                    </RadzenCheckBoxList>
+                                    @*foreach (var servProvider in servProviders)
+                                    {
+                                        <MatCheckbox @bind-Value="@checkedServProvider" InputValue="@servProvider.Id.ToString()" Label="@servProvider.Name"></MatCheckbox><br />
+                                    }*@
+                                }
+                                else
+                                {
+                                    <MatProgressCircle Indeterminate="true" FourColored="true" />
+                                }
+                            </MatExpansionPanelDetails>
+                        </MatExpansionPanel>
+                    </MatAccordion>
+                </RadzenCard>
+            </div>
+        </div>
+        
+    </div>
+    <div class="col-lg-4 col-sm-12">
+        
+    </div>
+</div>

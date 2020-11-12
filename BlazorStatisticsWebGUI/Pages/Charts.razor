@@ -3,12 +3,6 @@
 @using System.Globalization
 @using Microsoft.EntityFrameworkCore
 
-@if (requisitions == null)
-{
-    <p><MatProgressBar Indeterminate="true"></MatProgressBar></p>
-}
-else
-{
 <RadzenCard>
     <div class="row">
         <div class="col-md-6 col-sm-12 col-xs-12">
@@ -22,18 +16,43 @@ else
     </div>
     <div class="row">
         <div class="col-lg-12 col-sm-12">
-            <RadzenChart @ref="reqChart">
-                <RadzenColumnSeries Stroke="#bbdefb" Fill="#455a64" Data="@reqCount" CategoryProperty="Label" Title="Rekvisisjoner" LineType="LineType.Dashed" ValueProperty="Count" />
-                <RadzenColumnOptions Radius="2" />
-            </RadzenChart>
+            @if (reqCount == null && reqCountDate == null)
+            {
+                <MatProgressCircle Indeterminate="true" FourColored="true" />
+            }
+            else
+            {
+                if (dateType == 0)
+                {
+                    <RadzenChart @ref="reqChart">
+                        <RadzenColumnSeries Stroke="#bbdefb" Fill="#455a64" Data="@reqCountDate" CategoryProperty="Label" Title="Rekvisisjoner" ValueProperty="Count" />
+                        <RadzenColumnOptions Radius="2" />
+                        <RadzenCategoryAxis FormatString="{0:dd MMM}" Padding="50" />
+                        <RadzenColumnOptions Margin="10" />
+                        <RadzenLegend Visible="false" />
+                    </RadzenChart>
+                }
+                else
+                {
+                    <RadzenChart @ref="reqChart">
+                        <RadzenColumnSeries Stroke="#bbdefb" Fill="#455a64" Data="@reqCount" CategoryProperty="Label" Title="Rekvisisjoner" ValueProperty="Count" />
+                        <RadzenColumnOptions Radius="2" />
+                        <RadzenCategoryAxis Padding="50" />
+                        <RadzenColumnOptions Margin="10" />
+                        <RadzenLegend Visible="false" />
+                    </RadzenChart>
+                }
+            }
+
         </div>
     </div>
 </RadzenCard>
-}
 
 @code {
     RadzenChart reqChart;
     public int? ItemId = null;
+    public string formatString;
+    public int dateType = 0;
     public int PeriodId
     {
         set
@@ -56,36 +75,37 @@ else
                };
 
     List<Requisition> requisitions;
-    List<Requisition> requisitionsToday;
-    List<DataItem> reqCount = new List<DataItem>();
+    List<DataItem> reqCount;
+    List<DataItem2> reqCountDate;
 
-    DataItem bestSender = new DataItem();
-    DataItem reqToday = new DataItem();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        requisitions = await requisitionService.ListAll();
-
-        requisitionsToday = await requisitionService.GetByDate(DateTime.Now.ToString("yyyy-MM-dd"));
-
-        bestSender = GetBestSender(requisitions);
-
-        reqToday = GetReqsToday(requisitionsToday);
-
-        var reqByDate = requisitions.GroupBy(s => s.RequisitionCreatedTime).Select(g => new { Date = g.Key, Count = g.Select(l => l.Id).Distinct().Count() });
-
-        foreach (var req in reqByDate)
+        if (firstRender)
         {
-            var date = $"{ req.Date.Month }/{ req.Date.Day }";
+            requisitions = await requisitionService.ListAll();
+            dateType = 0;
+            var reqByDate = requisitions
+                .GroupBy(s => s.RequisitionCreatedTime)
+                .Select(g => new { Date = g.Key, Count = g.Select(l => l.Id).Distinct().Count() });
 
-            reqCount.Add(new DataItem
+            reqCountDate = new List<DataItem2>();
+
+            foreach (var req in reqByDate)
             {
-                Label = $"{ req.Date.Month }/{ req.Date.Day }",
-                Count = req.Count
-            });
+                var date = $"{ req.Date.Month }/{ req.Date.Day }";
+
+                reqCountDate.Add(new DataItem2
+                {
+                    Label = req.Date,
+                    Count = req.Count
+                });
+            }
+            formatString = "{0: dd.MM}";
+            reqCountDate.ToArray();
+            StateHasChanged();
         }
 
-        reqCount.ToArray();
     }
 
     void Load()
@@ -104,35 +124,59 @@ else
             default:
                 LoadAll();
                 break;
-
         }
     }
 
     void LoadDaily()
     {
-        var reqByDay = requisitions.GroupBy(s => s.RequisitionCreatedTime).Select(g => new { Date = g.Key, Count = g.Select(l => l.Id).Distinct().Count() });
-        reqCount.Clear();
-        reqCount.ToList();
+        dateType = 0;
+        var reqByDay = requisitions
+        .GroupBy(s => s.RequisitionCreatedTime)
+        .Select(g => new { Date = g.Key, Count = g.Select(l => l.Id)
+        .Distinct()
+        .Count() });
+        if (reqCountDate != null)
+        {
+            reqCountDate.Clear();
+            reqCountDate.ToList();
+        }
+        else
+        {
+            reqCountDate = new List<DataItem2>();
+        }
         foreach (var req in reqByDay)
         {
             var date = $"{ req.Date.Month }/{ req.Date.Day }";
 
-            reqCount.Add(new DataItem
+            reqCountDate.Add(new DataItem2
             {
-                Label = $"{ req.Date.Month }/{ req.Date.Day }",
+                Label = req.Date,
                 Count = req.Count
             });
         }
 
-        reqCount.ToArray();
+        reqCountDate.ToArray();
         reqChart.Reload();
     }
 
     void LoadWeekly()
     {
-        var reqByWeek = requisitions.GroupBy(i => CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(i.RequisitionCreatedTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday)).Select(g => new { Week = g.Key, Count = g.Select(l => l.Id).Distinct().Count() });
-        reqCount.Clear();
-        reqCount.ToList();
+        dateType = 1;
+        var reqByWeek = requisitions
+        //.GroupBy(i => i.RequisitionCreatedTime.)
+        .GroupBy(i => CultureInfo.CurrentCulture.Calendar.GetWeekOfYear(i.RequisitionCreatedTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday))
+        .Select(g => new { Week = g.Key, Count = g.Select(l => l.Id)
+        .Distinct()
+        .Count() });
+        if (reqCount != null)
+        {
+            reqCount.Clear();
+            reqCount.ToList();
+        }
+        else
+        {
+            reqCount = new List<DataItem>();
+        }
         foreach (var req in reqByWeek)
         {
             reqCount.Add(new DataItem
@@ -147,9 +191,17 @@ else
     }
     void LoadMonthly()
     {
+        dateType = 1;
         var reqByMonth = requisitions.GroupBy(s => new { s.RequisitionCreatedTime.Year, s.RequisitionCreatedTime.Month }).Select(g => new { Month = g.Key, Count = g.Select(l => l.Id).Distinct().Count() });
-        reqCount.Clear();
-        reqCount.ToList();
+        if (reqCount != null)
+        {
+            reqCount.Clear();
+            reqCount.ToList();
+        }
+        else
+        {
+            reqCount = new List<DataItem>();
+        }
         foreach (var req in reqByMonth)
         {
             reqCount.Add(new DataItem
@@ -165,9 +217,14 @@ else
 
     void LoadAll()
     {
+        dateType = 1;
         var reqByYear = requisitions.GroupBy(s => s.RequisitionCreatedTime.Year).Select(g => new { Year = g.Key, Count = g.Count() });
-        reqCount.Clear();
-        reqCount.ToList();
+        if (reqCount != null)
+        {
+            reqCount.Clear();
+            reqCount.ToList();
+        }
+
         reqCount.Add(new DataItem
         {
             Label = "2019",
@@ -186,43 +243,14 @@ else
         reqChart.Reload();
     }
 
-    private DataItem GetBestSender(List<Requisition> requisitions)
-    {
-        var superReq = requisitions.GroupBy(s => s.SenderHerId).Select(g => new { Sender = g.Key, Count = g.Count() }).OrderByDescending(s => s.Count).Take(1);
-
-        DataItem test = new DataItem
-        {
-            Label = superReq.FirstOrDefault().Sender.ToString(),
-            Count = superReq.FirstOrDefault().Count
-        };
-
-        return test;
-    }
-
-    private DataItem GetReqsToday(List<Requisition> requisitions)
-    {
-        var todayReq = requisitions.GroupBy(g => g.RequisitionCreatedTime.Date).Select(s => new { Date = s.Key, Count = s.Count() });
-
-        DataItem today = new DataItem();
-        if (todayReq.Count() != 0)
-        {
-            today.Count = todayReq.FirstOrDefault().Count;
-            today.Label = todayReq.FirstOrDefault().Date.ToString();
-        }
-        else
-        {
-            today.Count = 0;
-            today.Label = DateTime.Now.ToString("yyyy-MM-dd");
-        }
-
-        return today;
-    }
-
     public class DataItem
     {
         public string Label { get; set; }
         public int Count { get; set; }
     }
-
-
+    public class DataItem2
+    {
+        public DateTime Label { get; set; }
+        public int Count { get; set; }
     }
+}

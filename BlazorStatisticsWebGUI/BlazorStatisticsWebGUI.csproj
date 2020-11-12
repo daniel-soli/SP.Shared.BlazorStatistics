@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MatBlazor" Version="2.7.0" />
+    <PackageReference Include="MatBlazor" Version="2.8.0-develop-021" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.10.9" />
-    <PackageReference Include="Radzen.Blazor" Version="2.15.18" />
+    <PackageReference Include="Radzen.Blazor" Version="2.16.1" />
   </ItemGroup>
 
   <ItemGroup>

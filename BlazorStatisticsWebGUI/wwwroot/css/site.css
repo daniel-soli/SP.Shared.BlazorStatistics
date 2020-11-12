@@ -255,3 +255,74 @@ button:focus {
     background: rgba(0,0,0,0.1);
     text-decoration: none;
 }
+
+/*MOBILE*/
+@@media (min-width: 320px) {
+    .mdc-drawer__content {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        margin-top: 8px;
+        background: #fafafa !important;
+        height: 88vh;
+    }
+
+    .mdc-drawer.mdc-drawer--open:not(.mdc-drawer--closing) + .mdc-drawer-app-content {
+        margin-left: 170px;
+        margin-right: 0;
+    }
+
+    .mdc-drawer {
+        width: 170px !important;
+    }
+
+    .Banner {
+        width: 100%;
+        background-color: #3f9d2f !important;
+        height: 110px;
+        margin-top: -2px;
+        box-shadow: -2px -7px 15px 7px black;
+        padding: 10px;
+    }
+
+    .UserIcon {
+        font-size: 50px !important;
+        color: #FFFFFF;
+        margin-left: 39% !important;
+        cursor: pointer;
+        margin-top: -7px;
+    }
+
+    .WideScreenClass {
+        display: none;
+    }
+
+    .MobileClass {
+        display: block;
+    }
+
+    .BannerUsernameHeading {
+        margin: auto;
+        color: #FFFFFF;
+        text-align: center;
+        font-weight: 500;
+        font-size: 30px !important;
+    }
+
+    .BannerCompanyNameHeading {
+        margin: auto;
+        color: #FFFFFF;
+        text-align: center;
+        font-size: 15px !important;
+        margin-top: -9px;
+    }
+
+    .k-menu-group .k-item > .k-link, .k-menu-vertical .k-item > .k-link {
+        color: black !important;
+        margin-bottom: 2px !important;
+        margin-top: 2px !important;
+        line-height: 1.6 !important;
+        font-family: Roboto !important;
+        font-variant: all-petite-caps !important;
+        font-size: larger !important;
+    }
+}

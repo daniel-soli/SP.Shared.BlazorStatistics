@@ -72,8 +72,13 @@ namespace BlazorStatistics.Core.Data
                     $"Statistics.RequisitionCreatedTime, " +
                     $"Statistics.SenderHerId, " +
                     $"CONCAT_WS('', Organizations.Name, ', ', OrganizationServices.Name) as SenderName, " +
+                    //$"Organizations.Name" +
+                    $"Organizations.Id AS OrganizationId, " +
                     $"Statistics.LabHerId, " +
-                    $"CONCAT_WS('', ServProviders.Name, ', ', ServProviders.ServiceName) as LabName " +
+                    $"CONCAT_WS('', ServProviders.Name, ', ', ServProviders.ServiceName) as LabName, " +
+                    $"ServProviders.ServiceName, " +
+                    $"ServProviders.Id AS ServProviderId, " + 
+                    $"ServProviders.Name AS ServProviderName " +
                     $"FROM Statistics " +
                     $"INNER JOIN OrganizationServices ON Statistics.SenderHerId = OrganizationServices.HerId " +
                     $"INNER JOIN ServProviders ON Statistics.LabHerId = ServProviders.ServiceHerId " +
@@ -98,6 +103,21 @@ namespace BlazorStatistics.Core.Data
             return requisition;
         }
 
+        public Task<List<TopReceiver>> GetTopReceivers()
+        {
+            var requisition = Task.FromResult(
+                _dapperService.GetAll<TopReceiver>
+                ($"SELECT Statistics.LabHerId, " +
+                $"CONCAT_WS('', ServProviders.Name, ', ', ServProviders.ServiceName) as LabName, " +
+                $"Count(*) AS Antall " +
+                $"FROM `Statistics` " +
+                $"INNER JOIN ServProviders ON ServProviders.ServiceHerId = Statistics.LabHerId " +
+                $"GROUP BY Statistics.LabHerId, LabName " +
+                $"ORDER BY Antall DESC " +
+                $"LIMIT 6", null, commandType: CommandType.Text)
+                );
+            return requisition;
+        }
         // MS SQL
         //public Task<Requisition> GetById(int id)
         //{
